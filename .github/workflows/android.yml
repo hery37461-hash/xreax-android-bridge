@@ -1,0 +1,51 @@
+name: Build XReaX Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'xreax-android-bridge-source.zip'
+      - '.github/workflows/android.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK
+        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Extract project
+        run: |
+          mkdir -p source
+          unzip -o xreax-android-bridge-source.zip -d source
+          PROJECT_DIR=$(find "$GITHUB_WORKSPACE/source" -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit | xargs dirname)
+          if [ -z "$PROJECT_DIR" ] || [ ! -d "$PROJECT_DIR" ]; then
+            echo "Project Gradle tidak ditemukan."
+            exit 1
+          fi
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+
+      - name: Build APK
+        run: |
+          gradle --version
+          gradle -p "$PROJECT_DIR" assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: XReaX-Android-APK
+          path: source/**/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
