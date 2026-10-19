@@ -2,10 +2,6 @@ name: Build XReaX Android APK
 
 on:
 workflow_dispatch:
-push:
-paths:
-- 'xreax-android-bridge-source.zip'
-- '.github/workflows/android.yml'
 
 jobs:
 build:
